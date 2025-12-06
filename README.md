@@ -12,7 +12,7 @@ HyperChat is a full-stack end-to-end **multi-modal** AI chat inspired by **Micro
 This project includes both a **frontend UI** and a **Python backend API**.
 
 <p align="center">
-  <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="600" />
+  <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="800" />
 </p>
 
 ---
