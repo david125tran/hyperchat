@@ -1,70 +1,53 @@
-# Getting Started with Create React App
+# ⚡ HyperChat - Multi-Model AI Chat + RAG + File Upload
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+HyperChat is a full-stack end-to-end **multi-modal** AI chat inspired by **Microsoft Teams** assistant built with **React**, **FastAPI**, and **Amazon Bedrock**, with support for:
 
-## Available Scripts
+- Multiple AI chat models with different funcitionality (**RAG**, **Tooling**, **Generallist**)
+- Per-chat conversation history
+- Uploading files into a conversation
+- Clear chat button
+- Most recent messages go to the top
+- Model-specific pipelines (generalist, RAG, tools, etc.)
 
-In the project directory, you can run:
+This project includes both a **frontend UI** and a **Python backend API**.
 
-### `npm start`
+<p align="center">
+  <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="600" />
+</p>
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🚀 Features
 
-### `npm test`
+### 🎨 Multi-Model Chat UI
+Each AI model gets:
+- A separate conversation
+- Its own avatar
+- Persistent history saved in browser storage
+- Custom intro prompt
+- Colored sidebar status
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🧠 LLM Model Routing
+The backend switches between different behavior depending on the model type:
 
-### `npm run build`
+- General conversational AI
+- RAG assistant w/ FAISS search
+- Tools-enabled AI
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Configured in `backend/app/model_config.py`  
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🔍 Retrieval-Augmented Generation (RAG)
+- **David Tran the Robot** (rag-assistant-1) - This rag system was built here: `hyperchat\pipelines\rag-assistant-1`
+   
+Uses:
+- LangChain
+- FAISS vector store
+- OpenAI embeddings
+- Local knowledge base folder
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+When chatting with the RAG assistant, answers are grounded in your own documents.  The **`hyperchat\pipelines`** directory contains a script to create a Vector DB for the RAG systems.  
 
-### `npm run eject`
+### 🧩 AWS Bedrock Inference
+Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hosted models.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
