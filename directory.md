@@ -41,16 +41,3 @@ hyperchat/
         ├── ChatPage.css                                        # Chat UI styling
         ├── index.js                                            # React entrypoint → App
         └── index.css                                           # Global styles (resets, fonts)
-
-
-
-
-
-
-
-
-
-
-
-
-

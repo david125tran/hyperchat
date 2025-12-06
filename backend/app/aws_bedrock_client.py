@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Any
 load_dotenv()
 
 
+# ------------------ AWS Bedrock Client ------------------
 class BedrockClient:
   """
   Thin async wrapper around the Amazon Bedrock Runtime `converse` API
@@ -49,7 +50,7 @@ class BedrockClient:
       region_name=resolved_region,
     )
 
-  # ---------- internal sync helper ----------
+  # ---------- Internal Sync Helper ----------
   def _converse_sync(
     self,
     *,
@@ -133,7 +134,7 @@ class BedrockClient:
 
     return "".join(text_chunks).strip()
 
-  # ---------- public async helper used by your pipelines ----------
+  # ---------- Public async helper used by pipelines ----------
   async def chat(
     self,
     *,

@@ -1,8 +1,9 @@
 # app/main.py
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import json
 from pydantic import BaseModel
 from typing import Any, List, Optional
 
@@ -18,7 +19,7 @@ env_path = r"C:\Users\Laptop\Desktop\Coding\React\hyperchat\backend\.env"
 load_dotenv(dotenv_path=env_path, override=True)
 
 # Access the API keys stored in the environment variable
-openai_api_key = os.getenv('OPENAI_API_KEY')            # https://openai.com/api/
+openai_api_key = os.getenv("OPENAI_API_KEY")  # https://openai.com/api/
 
 
 # ------------------------------------ Chat Classes ----------------------------------
@@ -44,29 +45,76 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat_endpoint(body: ChatRequest):
-    backend_id = body.backendId
-    message = body.message
-    history = body.history or []
+async def chat_endpoint(
+    backendId: str = Form(...),
+    message: str = Form(""),
+    history: str = Form("[]"),
+    file: UploadFile = File(None),
+):
+    """
+    Chat endpoint that supports text, history, and an optional uploaded file.
+    The frontend sends multipart/form-data (FormData).
+    """
+    # Parse history JSON
+    try:
+        history_list = json.loads(history) if history else []
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid history JSON")
 
-    config = MODEL_CONFIGS.get(backend_id)
-
-    # The "model_config.py" script will control what function is called
+    config = MODEL_CONFIGS.get(backendId)
     if not config:
         raise HTTPException(status_code=400, detail="Unknown model backendId")
+
+    # Handle file (if any)
+    file_bytes: Optional[bytes] = None
+    file_name: Optional[str] = None
+    file_mime: Optional[str] = None
+
+    if file is not None:
+        file_bytes = await file.read()
+        file_name = file.filename
+        file_mime = file.content_type or "application/octet-stream"
+
+        print("---- Uploaded file ----")
+        print("Name:", file_name)
+        print("MIME:", file_mime)
+        print("Size (bytes):", len(file_bytes))
+        print("------------------------")
 
     # Extract the LLM type
     type_ = config["type"]
 
-    # Route the chat to the correct pipeline
+    # Route the chat to the correct pipeline and pass file data
     if type_ == "rag-assistant-1":
-        reply = await handle_rag_chat(openai_api_key, config, message, history)
+        reply = await handle_rag_chat(
+            openai_api_key,
+            config,
+            message,
+            history_list,
+            file_bytes=file_bytes,
+            file_name=file_name,
+            file_mime=file_mime,
+        )
     elif type_ == "tools-assistant-1":
-        reply = await handle_tools_chat(config, message, history)
-    # All generalist AI models use the same function
+        reply = await handle_tools_chat(
+            config,
+            message,
+            history_list,
+            file_bytes=file_bytes,
+            file_name=file_name,
+            file_mime=file_mime,
+        )
     elif type_ in ("general", "fine_tuned"):
-        reply = await handle_general_chat(config, message, history)
+        reply = await handle_general_chat(
+            config,
+            message,
+            history_list,
+            file_bytes=file_bytes,
+            file_name=file_name,
+            file_mime=file_mime,
+        )
     else:
         raise HTTPException(status_code=500, detail="Unsupported model type")
 

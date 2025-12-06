@@ -5,9 +5,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./ChatPage.css";
 
-// Images
+
+// ------------------------------------ Avatar Profile Pictures ------------------------------------
 import ragAssistantOneAvatar from "./images/rag-assistant-2.jpg";
 
+
+// ------------------------------------ Models Config ------------------------------------
 const models = {
   1: {
     backendId: "general-assistant-1",
@@ -42,6 +45,8 @@ const models = {
   },
 };
 
+
+// ------------------------------------ Initialize Chat Page ------------------------------------
 // Build initial chats: each model gets its own greeting
 const buildInitialChats = () => {
   const initial = {};
@@ -59,7 +64,7 @@ const STORAGE_KEY = "hyperchat-chats-v1";
 export default function ChatPage() {
   const [selectedModel, setSelectedModel] = useState("1"); // keep as string to match object keys
 
-  // ---------- chats state with localStorage persistence ----------
+  // ---------- Chats state with localStorage persistence ----------
   const [chats, setChats] = useState(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -83,18 +88,19 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
 
+  // Per-model file state (actual File object, NOT stored in localStorage)
+  const [filesByModel, setFilesByModel] = useState({});
+
   const currentModel = models[selectedModel];
   const currentMessages = chats[selectedModel] || [];
-
-  // ---------- helpers ----------
-
+  const currentFile = filesByModel[selectedModel] || null;
   const formatTime = (ts) => {
     if (!ts) return "";
     const d = new Date(ts);
     return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   };
 
-  // sort models by most recent message timestamp
+  // Sort models by most recent message timestamp
   const sortedModels = Object.entries(models).sort(([idA], [idB]) => {
     const msgsA = chats[idA] || [];
     const msgsB = chats[idB] || [];
@@ -105,9 +111,9 @@ export default function ChatPage() {
     return tsB - tsA; // newest first
   });
 
-  // fake streaming of bot reply
+  // Fake streaming of bot reply
   const streamBotReply = (modelId, fullText) => {
-    const typingSpeedMs = 15; // adjust speed here (smaller = faster)
+    const typingSpeedMs = 9; // adjust speed here (smaller = faster)
     const timestamp = Date.now();
 
     // 1) Add an empty bot message as a placeholder
@@ -148,20 +154,42 @@ export default function ChatPage() {
     }, typingSpeedMs);
   };
 
-  // ---------- send message ----------
+  // ---------- File Upload Handler ----------
+  const handleFileChange = (e) => {
+    const file = e.target.files[0] || null;
+    setFilesByModel((prev) => ({
+      ...prev,
+      [selectedModel]: file,
+    }));
+  };
+
+  // ---------- Send Message ----------
   const handleSend = async () => {
     // simple rate limiting: don't send if a request is in-flight
     if (isSending) return;
 
     const text = input.trim();
-    if (!text) return;
+    // Don't send if no text and no file
+    if (!text && !currentFile) return;
 
     const modelId = selectedModel;
     const historyForRequest = currentMessages; // history BEFORE this user message
     const now = Date.now();
 
-    // 1) Add user message locally
-    const userMessage = { from: "user", text, timestamp: now };
+    // 1) Add user message locally (text + file metadata)
+    const userMessage = {
+      from: "user",
+      text: text || "",
+      timestamp: now,
+      file: currentFile
+        ? {
+            name: currentFile.name,
+            size: currentFile.size,
+            type: currentFile.type,
+          }
+        : null,
+    };
+
     setChats((prev) => ({
       ...prev,
       [modelId]: [...(prev[modelId] || []), userMessage],
@@ -170,23 +198,33 @@ export default function ChatPage() {
     setIsSending(true);
 
     try {
-      // 2) Call backend
+      // 2) Build FormData instead of JSON
+      const formData = new FormData();
+      formData.append("modelId", modelId);
+      formData.append("backendId", currentModel.backendId);
+      formData.append("message", text);
+      formData.append("history", JSON.stringify(historyForRequest));
+
+      if (currentFile) {
+        formData.append("file", currentFile);
+      }
+
       const res = await fetch("http://localhost:4000/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          modelId,
-          backendId: currentModel.backendId,
-          message: text,
-          history: historyForRequest, // send history so backend can use it
-        }),
+        body: formData, // browser sets correct multipart boundary
       });
 
       const data = await res.json();
       const botText =
         data.reply || "Sorry, I didn't get a response from the model.";
 
-      // 3) Stream bot reply into the chat
+      // 3) Clear the file for this model once sent
+      setFilesByModel((prev) => ({
+        ...prev,
+        [modelId]: null,
+      }));
+
+      // 4) Stream bot reply into the chat
       streamBotReply(modelId, botText);
     } catch (err) {
       console.error(err);
@@ -205,13 +243,18 @@ export default function ChatPage() {
     }
   };
 
-  // ---------- clear chat for current model ----------
+  // ---------- Clear Chat for Current Model ----------
   const handleClearChat = () => {
     setChats((prev) => ({
       ...prev,
       [selectedModel]: currentModel.initMessage
         ? [{ from: "bot", text: currentModel.initMessage, timestamp: Date.now() }]
         : [],
+    }));
+    // Also clear file selection for that model
+    setFilesByModel((prev) => ({
+      ...prev,
+      [selectedModel]: null,
     }));
   };
 
@@ -251,13 +294,13 @@ export default function ChatPage() {
               onClick={() => setSelectedModel(id)}
             >
               <div className="sidebar-left">
-              <div className="sidebar-circle-wrapper">
-                <div className="sidebar-circle" style={{ background: color }}>
-                  {avatar ? <img src={avatar} alt={name} /> : "🤖"}
+                <div className="sidebar-circle-wrapper">
+                  <div className="sidebar-circle" style={{ background: color }}>
+                    {avatar ? <img src={avatar} alt={name} /> : "🤖"}
+                  </div>
+                  {id === selectedModel && <div className="presence-indicator" />}
+                  {hasUnread && <span className="sidebar-unread-badge" />}
                 </div>
-                {id === selectedModel && <div className="presence-indicator" />}
-                {hasUnread && <span className="sidebar-unread-badge" />}
-              </div>
                 <div className="sidebar-item-text">
                   <div className="sidebar-item-title-row">
                     <span className="sidebar-item-title">{name}</span>
@@ -317,11 +360,31 @@ export default function ChatPage() {
                 <div className="presence-indicator" />
               </div>
 
-
               <div className="message-bubble">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {msg.text}
-                </ReactMarkdown>
+                {/* Attachment card, if a file was sent with this message */}
+                {msg.file && (
+                  <div className="file-attachment">
+                    <div className="file-attachment-icon">📎</div>
+                    <div className="file-attachment-info">
+                      <div className="file-attachment-name">
+                        {msg.file.name}
+                      </div>
+                      <div className="file-attachment-meta">
+                        {msg.file.type || "File"}
+                        {msg.file.size != null &&
+                          ` • ${(msg.file.size / 1024).toFixed(1)} KB`}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Message text (if any) */}
+                {msg.text && (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {msg.text}
+                  </ReactMarkdown>
+                )}
+
                 <div className="message-meta">
                   {formatTime(msg.timestamp)}
                 </div>
@@ -331,6 +394,24 @@ export default function ChatPage() {
         </div>
 
         <footer className="chat-input-bar">
+          {/* File upload */}
+          <div className="file-upload-wrapper">
+            <label className="file-upload-button">
+              📎
+              <input
+                type="file"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+                disabled={isSending}
+              />
+            </label>
+            {currentFile && (
+              <span className="file-upload-name">
+                {currentFile.name}
+              </span>
+            )}
+          </div>
+
           <input
             className="chat-input"
             placeholder={
