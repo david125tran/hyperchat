@@ -8,15 +8,12 @@ HyperChat is a full-stack end-to-end **multi-modal** AI chat inspired by **Micro
 - Clear chat button
 - Most recent messages go to the top
 - Model-specific pipelines (generalist, RAG, tools, etc.)
+- I integrated in **OWASP Top 10 for Large Language Model Applications** best practices to filter user inputs and filter LLM outputs. 
 
 This project includes both a **frontend UI** and a **Python backend API**.
 
 <p align="center">
-<<<<<<< HEAD
-  <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="600" />
-=======
   <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="800" />
->>>>>>> 7ff612fe44fa978e6b37f588c28f4060d497a0f9
 </p>
 
 ---
@@ -30,6 +27,7 @@ Each AI model gets:
 - Persistent history saved in browser storage
 - Custom intro prompt
 - Colored sidebar status
+- End user has ability to clear conversational chat history
 
 ### 🧠 LLM Model Routing
 The backend switches between different behavior depending on the model type:
@@ -41,22 +39,12 @@ The backend switches between different behavior depending on the model type:
 Configured in `backend/app/model_config.py`  
 
 ### 🔍 Retrieval-Augmented Generation (RAG)
-- **David Tran the Robot** (rag-assistant-1) - This rag system was built here: `hyperchat\pipelines\rag-assistant-1`
-   
-Uses:
-- LangChain
-- FAISS vector store
-- OpenAI embeddings
-- Local knowledge base folder
-
-When chatting with the RAG assistant, answers are grounded in your own documents.  The **`hyperchat\pipelines`** directory contains a script to create a Vector DB for the RAG systems.  
+- **David Tran the Robot** (rag-assistant-1) - A RAG system with equipped knowledge on LLM security.  This rag system was built here: `hyperchat\pipelines\rag-assistant-1`
+- Uses:
+    - LangChain
+    - FAISS vector store
+    - OpenAI embeddings
+    - Local knowledge base folder
 
 ### 🧩 AWS Bedrock Inference
 Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hosted models.
-
-<<<<<<< HEAD
----chatgpt.com
-chat
-=======
----
->>>>>>> 7ff612fe44fa978e6b37f588c28f4060d497a0f9
