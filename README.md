@@ -12,7 +12,11 @@ HyperChat is a full-stack end-to-end **multi-modal** AI chat inspired by **Micro
 This project includes both a **frontend UI** and a **Python backend API**.
 
 <p align="center">
+<<<<<<< HEAD
   <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="600" />
+=======
+  <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="800" />
+>>>>>>> 7ff612fe44fa978e6b37f588c28f4060d497a0f9
 </p>
 
 ---
@@ -50,5 +54,9 @@ When chatting with the RAG assistant, answers are grounded in your own documents
 ### 🧩 AWS Bedrock Inference
 Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hosted models.
 
+<<<<<<< HEAD
 ---chatgpt.com
 chat
+=======
+---
+>>>>>>> 7ff612fe44fa978e6b37f588c28f4060d497a0f9
