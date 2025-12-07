@@ -4,13 +4,35 @@ import asyncio
 import boto3
 from dotenv import load_dotenv
 import os
+import re
 from typing import Optional, List, Dict, Any
 
-# ------------------ Load Environment Variables ------------------
+# ---------------------------------- Load Environemtn Variables ----------------------------------
 load_dotenv()
 
 
-# ------------------ AWS Bedrock Client ------------------
+# ---------------------------------- Output Santization ----------------------------------
+SECRET_PATTERNS = [
+    # OpenAI-style Keys
+    re.compile(r"sk-[A-Za-z0-9]{20,}"),
+    # Misc. Keys
+    re.compile(r"(?i)aws_?(secret|access)_?key\s*[:=]\s*[A-Za-z0-9/+=]{20,}"),
+    # AWS Access Key IDs
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b")
+]
+
+def sanitize_model_output(text: str) -> str:
+    """
+    Remove / mask anything we never want to leak to the user.
+    """
+    for pat in SECRET_PATTERNS:
+        text = pat.sub("[REDACTED_SECRET]", text)
+
+    return text
+
+
+
+# ---------------------------------- AWS Bedrock Client ----------------------------------
 class BedrockClient:
   """
   Thin async wrapper around the Amazon Bedrock Runtime `converse` API
@@ -132,7 +154,9 @@ class BedrockClient:
       if "text" in item:
         text_chunks.append(item["text"])
 
-    return "".join(text_chunks).strip()
+    raw = "".join(text_chunks).strip()
+    safe = sanitize_model_output(raw)
+    return safe
 
   # ---------- Public async helper used by pipelines ----------
   async def chat(
