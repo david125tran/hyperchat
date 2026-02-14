@@ -1,16 +1,27 @@
-# ⚡ HyperChat - Multi-Model AI Chat + RAG + File Upload
+# ⚡ HyperChat
 
-HyperChat is a full-stack end-to-end **multi-modal** AI chat inspired by **Microsoft Teams** assistant built with **React**, **FastAPI**, and **Amazon Bedrock**, with support for:
+## Modular AI Orchestration Framework (React + FastAPI + Bedrock + RAG)
 
-- Multiple AI chat models with different funcitionality (**RAG**, **Tooling**, **Generallist**)
-- Per-chat conversation history
-- Uploading files into a conversation
-- Clear chat button
-- Most recent messages go to the top
-- Model-specific pipelines (generalist, RAG, tools, etc.)
-- I integrated in **OWASP Top 10 for Large Language Model Applications** best practices to filter user inputs and filter LLM outputs. 
+HyperChat is a full-stack, model-agnostic AI chat system that
+demonstrates modern applied AI engineering patterns:
 
-This project includes both a **frontend UI** and a **Python backend API**.
+-   Multi-pipeline AI routing (General LLM, RAG, Tools/Agents)
+-   Configuration-driven backend orchestration
+-   Retrieval-Augmented Generation with FAISS
+-   AWS Bedrock model integration
+-   File-aware conversational context
+-   OWASP Top 10 for LLM Applications safeguards
+-   Decoupled frontend architecture
+
+This project is not just a chat UI - it is a pluggable AI
+orchestration platform designed to separate:
+
+-   UI concerns
+-   AI routing logic
+-   Model infrastructure
+-   Retrieval pipelines
+-   Tool execution
+-   Security enforcement
 
 <p align="center">
   <img src="https://github.com/david125tran/hyperchat/blob/main/ui.png?raw=true" width="800" />
@@ -18,109 +29,164 @@ This project includes both a **frontend UI** and a **Python backend API**.
 
 ---
 
-## 🚀 Features
+# 🏗 Architecture Overview
 
-### 🎨 Multi-Model Chat UI
-Each AI model gets:
-- A separate conversation
-- Its own avatar
-- Persistent history saved in browser storage
-- Custom intro prompt
-- Colored sidebar status
-- End user has ability to clear conversational chat history
+HyperChat is built around a single unified API contract:
 
-### 🧠 LLM Model Routing
-The backend switches between different behavior depending on the model type:
+    POST /api/chat
 
-- General conversational AI
-- RAG assistant w/ FAISS search
-- Tools-enabled AI
+The frontend sends:
 
-Configured in `backend/app/model_config.py`  
+-   backendId
+-   message
+-   history
+-   optional file
 
-### 🔍 Retrieval-Augmented Generation (RAG)
-- **David Tran the Robot** (rag-assistant-1) - A RAG system with equipped knowledge on LLM security.  This rag system was built here: `hyperchat\pipelines\rag-assistant-1`
-- Uses:
-    - LangChain
-    - FAISS vector store
-    - OpenAI embeddings
-    - Local knowledge base folder
+The backend acts as an AI orchestration layer, dynamically routing the
+request to the appropriate pipeline.
 
-### 🧩 AWS Bedrock Inference
-Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hosted models.
+---
 
-```mermaid
-    flowchart LR
-    %% =========================
-    %% Backend entry point (FastAPI)
-    %% =========================
-    A["Client (React)<br\>POST /api/chat<br/>multipart/form-data<br/>backendId, message, history, optional file"] --> B["FastAPI app<br/>app/main.py"]
-    B --> C["chat_endpoint()<br/>/api/chat"] 
+# 🚀 Core Capabilities
 
-    %% Security + parsing
-    C --> D["validate_query(message)<br/>blocks prompt/SQL injection<br/>redacts secrets"]
-    D -->|blocked| E["Return ChatResponse(reply=error_msg)"]
-    D -->|ok| F["Parse history JSON<br/>history_list = json.loads(history)"]
-    F --> G["Lookup config by backendId<br/>MODEL_CONFIGS[backendId]"]
+## 🧠 Multi-Model Chat UI
 
-    %% File handling
-    C --> H{File uploaded?}
-    H -->|yes| I["Read file bytes + metadata<br/>file_bytes, file_name, file_mime"]
-    H -->|no| J[Continue without file]
+Each AI assistant includes:
 
-    %% Route by backend type
-    G --> K{"config['type']"}
-    K -->|rag-assistant-1| RAG["handle_rag_chat(...)"]
-    K -->|tools-assistant-1| TOOLS["handle_tools_chat(...)"]
-    K -->|"general / fine_tuned"| GEN["handle_general_chat(...)"]
-    K -->|unknown| X[HTTP 500 Unsupported model type]
+-   Independent conversation history
+-   Persistent browser storage
+-   Unique system prompt
+-   Custom avatar & visual styling
+-   Clear-chat functionality
+-   Optional file attachment per message
 
-    %% =========================
-    %% RAG pipeline
-    %% =========================
-    subgraph S1["RAG pipeline (app/pipelines.py)"]
-        RAG --> R1["Load FAISS vector store<br/>(config['vector_store'])"]
-        R1 --> R2["Embed query w/ OpenAIEmbeddings<br/>(api_key from env)"]
-        R2 --> R3["Similarity search k=4<br/>context = join(doc.page_content)"]
-        RAG --> R4["Extract uploaded file text<br/>(DOCX or text decode)<br/>+ append excerpt"]
-        R3 --> R5["Build user_message:<br/>Question + Context + optional file excerpt"]
-        RAG --> R6["Convert history for Bedrock<br/>convert_history_for_bedrock()"]
-        R5 --> R7["aws_bedrock_client.chat(<br/>model=base_model,<br/>system=system_prompt,<br/>message=user_message,<br/>history=converted)"]
-        R6 --> R7
-    end
+The frontend is intentionally model-agnostic. The end user does not know
+whether it is talking to:
 
-    %% =========================
-    %% General pipeline
-    %% =========================
-    subgraph S2["General pipeline (app/pipelines.py)"]
-        GEN --> G1[Convert history for Bedrock]
-        GEN --> G2["If file uploaded:<br/>append excerpt to message"]
-        G1 --> G3["aws_bedrock_client.chat(<br/>model=base_model,<br/>system=system_prompt,<br/>message=message_for_model,<br/>history=converted)"]
-        G2 --> G3
-    end
+-   A vanilla LLM
+-   A RAG pipeline
+-   A tools-enabled agent
 
-    %% =========================
-    %% Tools pipeline
-    %% =========================
-    subgraph S3["Tools pipeline (app/pipelines.py + app/tools.py)"]
-        TOOLS --> T1["If file uploaded:<br/>append excerpt to message"]
-        TOOLS --> T2["call_tools(<br/>model=base_model,<br/>tools=config.tools,<br/>message=message_for_model,<br/>history=original)"]
-        T2 --> T3["Return tool_result['final_answer']<br/>(currently a stub/echo)"]
-    end
+It simply calls `/api/chat` with a backendId.
 
-    %% =========================
-    %% Bedrock client (shared)
-    %% =========================
-    subgraph S4["AWS Bedrock Client (app/aws_bedrock_client.py)"]
-        R7 --> BC["BedrockClient.chat()<br/>async wrapper -> to_thread"]
-        G3 --> BC
-        BC --> BCS["_converse_sync()<br/>Build messages + system + toolConfig<br/>Call bedrock-runtime.converse()"]
-        BCS --> OUT["sanitize_model_output()<br/>redact key-like patterns<br/>return safe assistant text"]
-    end
+------------------------------------------------------------------------
 
-    %% Return to client
-    OUT --> Z["Return ChatResponse(reply=completion)"]
-    T3 --> Z2["Return ChatResponse(reply=tool_answer)"]
-  ```
+## 🔀 Configuration-Driven AI Routing
 
+Backend behavior is controlled through:
 
+`backend/app/model_config.py`
+
+Instead of hardcoding logic in the API layer, each assistant is defined
+by configuration:
+
+-   Model type
+-   Base model
+-   System prompt
+-   Tool availability
+-   Vector store path
+
+Adding a new assistant requires no changes to the API contract.
+
+------------------------------------------------------------------------
+
+## 🔍 Retrieval-Augmented Generation (RAG)
+
+The RAG assistant:
+
+-   Uses LangChain for orchestration
+-   Uses FAISS for local vector search
+-   Uses OpenAI embeddings
+-   Loads a local knowledge base directory
+-   Retrieves top-k semantic chunks
+-   Injects grounded context into the model prompt
+-   Optionally appends uploaded file excerpts
+
+------------------------------------------------------------------------
+
+## 🧩 Tools / Agent Pipeline
+
+The tools pipeline supports model-driven tool calling.
+
+The backend can:
+
+-   Pass tool schemas to Bedrock
+-   Handle tool invocations
+-   Route tool responses
+-   Return structured answers
+
+------------------------------------------------------------------------
+
+## ☁️ AWS Bedrock Integration
+
+All model inference is routed through a centralized Bedrock client
+wrapper.
+
+The wrapper:
+
+-   Standardizes request formatting
+-   Converts history into Bedrock message format
+-   Supports tool configuration
+-   Handles async execution safely
+-   Sanitizes model output before returning to UI
+
+------------------------------------------------------------------------
+
+## 🛡 Security Integration (OWASP for LLM Applications)
+
+HyperChat integrates best practices from the OWASP Top 10 for LLM
+Applications, including:
+
+-   Prompt injection filtering
+-   Suspicious pattern detection
+-   Secret redaction
+-   Input validation
+-   Output sanitization
+
+Security enforcement happens before and after model inference.
+
+------------------------------------------------------------------------
+
+# 🧪 Vector Store Builder
+
+The project includes a standalone ingestion + RAG validation script:
+
+`vector store builder-1.py`
+
+This script:
+
+1.  Recursively scans a knowledge base directory
+2.  Dynamically selects the correct document loader based on the file extension (*.pdf, *.docx, etc.)
+3.  Chunks documents with overlap
+4.  Generates embeddings
+5.  Builds and persists a FAISS vector index
+6.  Visualizes embedding clusters in 3D using PCA
+7.  Runs a full RAG smoke test
+
+For this script, I kept the chunking strategy simple for a demo (800 character chunk with 100 character overlap).  In a production setting, I would inspect my chunks heavily and probably have a stronger chunking strategy.
+
+---
+
+# 🛠 Tech Stack
+
+- **Frontend** - React, React Router, LocalStorage, Multipart file upload handling
+- **Backend** - FastAPI, AWS Bedrock Runtime, LangChain, FAISS, OpenAI Embeddings - Python
+- **Security** - OWASP aligned practices, Input filtering, Output sanitization
+
+---
+# 🏠 System Architecture
+I intentionally designed Hyperchat as a configuration-driven AI orchestration framework rather that a single hardcoded chatbot.  The core design goal was decoupling logic from the frontend.  I wanted the frontend to be completely unaware of what tye of AI system it was talking to.  Whether it was a general conversational model, a RAG pipeline, or a tools-enabled agent.  The frontend simply sends a consistent payload to `/api/chat` with a `backendId` which determines how the request is processed.  
+
+This gives me flexibility with the app because I knew down the road, I wanted to add more AI assistants, swap model providers, and/or add entirely new pipelines without changing the API contract or touch the UI.  
+
+The React layer handles presentation and UX.  The FastAPI layer handles orchestration.  The pipeline layer handles the AI logic.  The Bedrock client handles inference infrastructure.  And lastly, the guard layer enforces security.  
+
+🙏 Thanks for viewing my app!   
+-David Tran
+
+---
+# 🌀 Mermaid Diagram
+
+<p align="center">
+  <img src="https://github.com/david125tran/hyperchat/blob/main/mermaid%20diagram.png?raw=true" width="800" />
+</p>
