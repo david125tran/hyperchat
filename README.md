@@ -54,7 +54,7 @@ Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hoste
     %% =========================
     %% Backend entry point (FastAPI)
     %% =========================
-    A["Client (React)\nPOST /api/chat\nmultipart/form-data\nbackendId, message, history, optional file"] --> B["FastAPI app\napp/main.py"]
+    A["Client (React)<br>POST /api/chat\nmultipart/form-data\nbackendId, message, history, optional file"] --> B["FastAPI app\napp/main.py"]
     B --> C["chat_endpoint()\n/api/chat"] 
 
     %% Security + parsing
