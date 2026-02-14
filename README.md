@@ -1,4 +1,4 @@
-# ⚡ HyperChat
+# ⚡ Hyperchat
 
 ## Modular AI Orchestration Framework (React + FastAPI + Bedrock + RAG)
 
@@ -31,13 +31,13 @@ orchestration platform designed to separate:
 
 # 🏗 Architecture Overview
 
-HyperChat is built around a single unified API contract:
+Hyperchat is built around a single unified API contract:
 
     POST /api/chat
 
 The frontend sends:
 
--   backendId
+-   backendId - This `backendId` is used by the backend to route it to the correct pipeline: general AI agent, RAG pipeline, tools-enabled agent, etc. 
 -   message
 -   history
 -   optional file
