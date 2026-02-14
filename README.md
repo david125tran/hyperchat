@@ -175,7 +175,7 @@ For this script, I kept the chunking strategy simple for a demo (800 character c
 
 ---
 # 🏠 System Architecture
-I intentionally designed Hyperchat as a configuration-driven AI orchestration framework rather that a single hardcoded chatbot.  The core design goal was decoupling logic from the frontend.  I wanted the frontend to be completely unaware of what tye of AI system it was talking to.  Whether it was a general conversational model, a RAG pipeline, or a tools-enabled agent.  The frontend simply sends a consistent payload to `/api/chat` with a `backendId` which determines how the request is processed.  
+I intentionally designed Hyperchat as a configuration-driven AI orchestration framework rather that a single hardcoded chatbot.  The core design goal was decoupling logic from the frontend.  I wanted the frontend to be completely unaware of what type of AI system it was talking to.  Whether it was a general conversational model, a RAG pipeline, or a tools-enabled agent.  The frontend simply sends a consistent payload to `/api/chat` with a `backendId` which determines how the request is processed.  
 
 This gives me flexibility with the app because I knew down the road, I wanted to add more AI assistants, swap model providers, and/or add entirely new pipelines without changing the API contract or touch the UI.  
 
