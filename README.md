@@ -54,18 +54,18 @@ Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hoste
     %% =========================
     %% Backend entry point (FastAPI)
     %% =========================
-    A["Client (React)<br>POST /api/chat\nmultipart/form-data\nbackendId, message, history, optional file"] --> B["FastAPI app\napp/main.py"]
-    B --> C["chat_endpoint()\n/api/chat"] 
+    A["Client (React)<br\>POST /api/chat<br/>multipart/form-data<br/>backendId, message, history, optional file"] --> B["FastAPI app<br/>app/main.py"]
+    B --> C["chat_endpoint()<br/>/api/chat"] 
 
     %% Security + parsing
-    C --> D["validate_query(message)\nblocks prompt/SQL injection\nredacts secrets"]
+    C --> D["validate_query(message)<br/>blocks prompt/SQL injection<br/>redacts secrets"]
     D -->|blocked| E["Return ChatResponse(reply=error_msg)"]
-    D -->|ok| F["Parse history JSON\nhistory_list = json.loads(history)"]
-    F --> G["Lookup config by backendId\nMODEL_CONFIGS[backendId]"]
+    D -->|ok| F["Parse history JSON<br/>history_list = json.loads(history)"]
+    F --> G["Lookup config by backendId<br/>MODEL_CONFIGS[backendId]"]
 
     %% File handling
     C --> H{File uploaded?}
-    H -->|yes| I["Read file bytes + metadata\nfile_bytes, file_name, file_mime"]
+    H -->|yes| I["Read file bytes + metadata<br/>file_bytes, file_name, file_mime"]
     H -->|no| J[Continue without file]
 
     %% Route by backend type
@@ -79,13 +79,13 @@ Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hoste
     %% RAG pipeline
     %% =========================
     subgraph S1["RAG pipeline (app/pipelines.py)"]
-        RAG --> R1["Load FAISS vector store\n(config['vector_store'])"]
-        R1 --> R2["Embed query w/ OpenAIEmbeddings\n(api_key from env)"]
-        R2 --> R3["Similarity search k=4\ncontext = join(doc.page_content)"]
-        RAG --> R4["Extract uploaded file text\n(DOCX or text decode)\n+ append excerpt"]
-        R3 --> R5["Build user_message:\nQuestion + Context + optional file excerpt"]
-        RAG --> R6["Convert history for Bedrock\nconvert_history_for_bedrock()"]
-        R5 --> R7["aws_bedrock_client.chat(\nmodel=base_model,\nsystem=system_prompt,\nmessage=user_message,\nhistory=converted)"]
+        RAG --> R1["Load FAISS vector store<br/>(config['vector_store'])"]
+        R1 --> R2["Embed query w/ OpenAIEmbeddings<br/>(api_key from env)"]
+        R2 --> R3["Similarity search k=4<br/>context = join(doc.page_content)"]
+        RAG --> R4["Extract uploaded file text<br/>(DOCX or text decode)<br/>+ append excerpt"]
+        R3 --> R5["Build user_message:<br/>Question + Context + optional file excerpt"]
+        RAG --> R6["Convert history for Bedrock<br/>convert_history_for_bedrock()"]
+        R5 --> R7["aws_bedrock_client.chat(<br/>model=base_model,<br/>system=system_prompt,<br/>message=user_message,<br/>history=converted)"]
         R6 --> R7
     end
 
@@ -94,8 +94,8 @@ Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hoste
     %% =========================
     subgraph S2["General pipeline (app/pipelines.py)"]
         GEN --> G1[Convert history for Bedrock]
-        GEN --> G2["If file uploaded:\nappend excerpt to message"]
-        G1 --> G3["aws_bedrock_client.chat(\nmodel=base_model,\nsystem=system_prompt,\nmessage=message_for_model,\nhistory=converted)"]
+        GEN --> G2["If file uploaded:<br/>append excerpt to message"]
+        G1 --> G3["aws_bedrock_client.chat(<br/>model=base_model,<br/>system=system_prompt,<br/>message=message_for_model,<br/>history=converted)"]
         G2 --> G3
     end
 
@@ -103,22 +103,24 @@ Backend uses AWS Bedrock Runtime to communicate with Claude / other Amazon-hoste
     %% Tools pipeline
     %% =========================
     subgraph S3["Tools pipeline (app/pipelines.py + app/tools.py)"]
-        TOOLS --> T1["If file uploaded:\nappend excerpt to message"]
-        TOOLS --> T2["call_tools(\nmodel=base_model,\ntools=config.tools,\nmessage=message_for_model,\nhistory=original)"]
-        T2 --> T3["Return tool_result['final_answer']\n(currently a stub/echo)"]
+        TOOLS --> T1["If file uploaded:<br/>append excerpt to message"]
+        TOOLS --> T2["call_tools(<br/>model=base_model,<br/>tools=config.tools,<br/>message=message_for_model,<br/>history=original)"]
+        T2 --> T3["Return tool_result['final_answer']<br/>(currently a stub/echo)"]
     end
 
     %% =========================
     %% Bedrock client (shared)
     %% =========================
     subgraph S4["AWS Bedrock Client (app/aws_bedrock_client.py)"]
-        R7 --> BC["BedrockClient.chat()\nasync wrapper -> to_thread"]
+        R7 --> BC["BedrockClient.chat()<br/>async wrapper -> to_thread"]
         G3 --> BC
-        BC --> BCS["_converse_sync()\nBuild messages + system + toolConfig\nCall bedrock-runtime.converse()"]
-        BCS --> OUT["sanitize_model_output()\nredact key-like patterns\nreturn safe assistant text"]
+        BC --> BCS["_converse_sync()<br/>Build messages + system + toolConfig<br/>Call bedrock-runtime.converse()"]
+        BCS --> OUT["sanitize_model_output()<br/>redact key-like patterns<br/>return safe assistant text"]
     end
 
     %% Return to client
     OUT --> Z["Return ChatResponse(reply=completion)"]
     T3 --> Z2["Return ChatResponse(reply=tool_answer)"]
   ```
+
+
